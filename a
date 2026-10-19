@@ -1,0 +1,156 @@
+-- ═══════════ КРАСИВАЯ ВАТЕРМАРКА + УМНАЯ ОПТИМИЗАЦИЯ (БЕЗ АНИМАЦИИ) ═══════════
+local Lighting = game:GetService("Lighting")
+local Workspace = game:GetService("Workspace")
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local TweenService = game:GetService("TweenService")
+
+local LP = Players.LocalPlayer
+local playerGui = LP:WaitForChild("PlayerGui")
+
+local oldGui = playerGui:FindFirstChild("SmartOptimizerUI")
+if oldGui then oldGui:Destroy() end
+
+local function create(c, p, pa)
+    local o = Instance.new(c)
+    for k, v in pairs(p) do o[k] = v end
+    o.Parent = pa
+    return o
+end
+
+local colorBg = Color3.fromRGB(15, 15, 16)
+local colorAccent = Color3.fromRGB(0, 255, 100)
+local colorText = Color3.fromRGB(230, 230, 230)
+
+local gui = create("ScreenGui", {Name="SmartOptimizerUI", ResetOnSpawn=false, IgnoreGuiInset=true, DisplayOrder=999}, playerGui)
+
+-- Плашка сразу видимая (без прозрачности)
+local main = create("Frame", {
+    Size = UDim2.new(0, 220, 0, 45), 
+    Position = UDim2.new(1, -235, 0, 15), 
+    BackgroundColor3 = colorBg, 
+    BorderSizePixel = 0,
+    BackgroundTransparency = 0.2, -- Легкая прозрачность фона
+}, gui)
+create("UICorner", {CornerRadius = UDim.new(0, 6)}, main)
+create("UIStroke", {Color = colorAccent, Thickness = 1.5, Transparency = 0}, main)
+
+local btn = create("TextButton", {Size = UDim2.new(1,0,1,0), BackgroundTransparency = 0.99, Text = "", ZIndex = 5}, main)
+
+local dot = create("Frame", {Size = UDim2.new(0, 10, 0, 10), Position = UDim2.new(0, 15, 0.5, -5), BackgroundColor3 = Color3.fromRGB(100, 100, 100), BorderSizePixel = 0, ZIndex = 2}, main)
+create("UICorner", {CornerRadius = UDim.new(1,0)}, dot)
+
+local title = create("TextLabel", {
+    Size = UDim2.new(1, -40, 0, 20), 
+    Position = UDim2.new(0, 35, 0, 5), 
+    BackgroundTransparency = 1, 
+    Text = "Pidoras optimization", 
+    TextColor3 = colorText, 
+    Font = Enum.Font.GothamBold, 
+    TextSize = 12, 
+    TextXAlignment = Enum.TextXAlignment.Left,
+    ZIndex = 2
+}, main)
+
+local fpsLabel = create("TextLabel", {
+    Size = UDim2.new(1, -40, 0, 15), 
+    Position = UDim2.new(0, 35, 0, 23), 
+    BackgroundTransparency = 1, 
+    Text = "FPS: ...", 
+    TextColor3 = Color3.fromRGB(150, 150, 150), 
+    Font = Enum.Font.Gotham, 
+    TextSize = 11, 
+    TextXAlignment = Enum.TextXAlignment.Left,
+    ZIndex = 2
+}, main)
+
+-- ═══════════ ЛОГИКА FPS ═══════════
+local frames = 0
+local lastTime = os.clock()
+RunService.RenderStepped:Connect(function()
+    frames = frames + 1
+    if os.clock() - lastTime >= 1 then
+        local fps = frames
+        frames = 0
+        lastTime = os.clock()
+        fpsLabel.Text = "FPS: " .. fps
+        
+        if fps > 45 then
+            fpsLabel.TextColor3 = Color3.fromRGB(0, 255, 100)
+        elseif fps > 25 then
+            fpsLabel.TextColor3 = Color3.fromRGB(255, 200, 0)
+        else
+            fpsLabel.TextColor3 = Color3.fromRGB(255, 80, 80)
+        end
+    end
+end)
+
+-- ═══════════ ЛОГИКА ОПТИМИЗАЦИИ ═══════════
+local isOptimized = false
+btn.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        isOptimized = not isOptimized
+        
+        if isOptimized then
+            dot.BackgroundColor3 = colorAccent
+            TweenService:Create(dot, TweenInfo.new(0.2), {Size = UDim2.new(0, 12, 0, 12), Position = UDim2.new(0, 14, 0.5, -6)}):Play()
+            title.Text = "Opt: ON"
+            
+            task.spawn(function()
+                Lighting.GlobalShadows = false
+                for _, effect in ipairs(Lighting:GetChildren()) do
+                    if effect:IsA("PostEffect") and not effect:IsA("ColorCorrectionEffect") and not effect:IsA("SunRaysEffect") then
+                        effect.Enabled = false
+                    end
+                end
+                
+                local count = 0
+                for _, obj in ipairs(Workspace:GetDescendants()) do if obj:IsA("BasePart") then
+                        obj.CastShadow = false
+                        local n = obj.Name:lower()
+                        if n:find("leaf") or n:find("leaves") or n:find("grass") or n:find("bush") then 
+                            obj.Transparency = 1 
+                            obj.CanCollide = false
+                        end
+                    elseif obj:IsA("Decal") or obj:IsA("Texture") then 
+                        obj.Transparency = 1 
+                    elseif obj:IsA("ParticleEmitter") or obj:IsA("Fire") or obj:IsA("Smoke") or obj:IsA("Sparkles") or obj:IsA("Trail") or obj:IsA("Beam") then 
+                        obj.Enabled = false 
+                    end
+                    count = count + 1
+                    if count % 200 == 0 then task.wait() end
+                end
+            end)
+        else
+            dot.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
+            TweenService:Create(dot, TweenInfo.new(0.2), {Size = UDim2.new(0, 10, 0, 10), Position = UDim2.new(0, 15, 0.5, -5)}):Play()
+            title.Text = "Pidoras optimization"
+            
+            Lighting.GlobalShadows = true
+            for _, effect in ipairs(Lighting:GetChildren()) do
+                if effect:IsA("PostEffect") then
+                    effect.Enabled = true
+                end
+            end
+            for _, obj in ipairs(Workspace:GetDescendants()) do
+                if obj:IsA("BasePart") then
+                    obj.CastShadow = true
+                end
+            end
+        end
+    end
+end)
+
+Workspace.DescendantAdded:Connect(function(obj)
+    if isOptimized then
+        if obj:IsA("ParticleEmitter") or obj:IsA("Fire") or obj:IsA("Smoke") or obj:IsA("Sparkles") or obj:IsA("Trail") or obj:IsA("Beam") then
+            obj.Enabled = false
+        elseif obj:IsA("BasePart") then
+            obj.CastShadow = false
+            local n = obj.Name:lower()
+            if n:find("leaf") or n:find("leaves") or n:find("grass") or n:find("bush") then 
+                obj.Transparency = 1 
+            end
+        end
+    end
+end)
