@@ -1,0 +1,258 @@
+--[[ Pantsir FPS Booster — Delta Mobile Edition (Drag + Сворачивание) ]]
+
+local Lighting = game:GetService("Lighting")
+local Workspace = game:GetService("Workspace")
+local Players = game:GetService("Players")
+local UIS = game:GetService("UserInputService")
+local LP = Players.LocalPlayer
+
+-- ================= ОПТИМИЗАЦИЯ =================
+local function optimize()
+    pcall(function()
+        Lighting.GlobalShadows = false
+        Lighting.Brightness = 1
+        Lighting.EnvironmentDiffuseScale = 0
+        Lighting.EnvironmentSpecularScale = 0
+        Lighting.OutdoorAmbient = Color3.new(0.5, 0.5, 0.5)
+        Lighting.FogEnd = 9e9
+        Lighting.FogStart = 9e9
+    end)
+
+    for _, v in ipairs(Lighting:GetChildren()) do
+        if v:IsA("Atmosphere") then
+            v.Density = 0; v.Haze = 0; v.Glare = 0
+        end
+        if v:IsA("BloomEffect") or v:IsA("BlurEffect") or v:IsA("SunRaysEffect") or v:IsA("ColorCorrectionEffect") then
+            v.Enabled = false
+        end
+        if v:IsA("Sky") then
+            v.StarCount = 0; v.CelestialBodiesShown = false
+        end
+    end
+
+    for _, obj in ipairs(Workspace:GetChildren()) do
+        if obj:IsA("BasePart") then
+            obj.Material = Enum.Material.SmoothPlastic
+            obj.CastShadow = false
+        end
+        if obj:IsA("ParticleEmitter") or obj:IsA("PointLight") or obj:IsA("SpotLight") or obj:IsA("SurfaceLight") then
+            obj.Enabled = false
+        end
+    end
+
+    for _, plr in ipairs(Players:GetPlayers()) do
+        if plr ~= LP and plr.Character then
+            for _, v in ipairs(plr.Character:GetDescendants()) do
+                if v:IsA("ParticleEmitter") or v:IsA("Trail") or v:IsA("PointLight") or v:IsA("SpotLight") then
+                    v.Enabled = false
+                end
+            end
+        end
+    end
+
+    for _, obj in ipairs(Workspace:GetChildren()) do
+        if obj:IsA("Model") or obj:IsA("Folder") then
+            local name = obj.Name:lower()
+            if name:find("tree") or name:find("grass") or name:find("bush") or name:find("decor") or name:find("foliage") then
+                obj.Parent = nil
+            end
+        end
+    end
+end
+
+-- ================= UI =================
+if _G.PantsirFPS_UI then _G.PantsirFPS_UI:Destroy() end
+
+local gui = Instance.new("ScreenGui")
+gui.Name = "PantsirFPS_UI"
+gui.ResetOnSpawn = false
+gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+gui.IgnoreGuiInset = true
+gui.Parent = game:GetService("CoreGui")
+_G.PantsirFPS_UI = gui
+
+local main = Instance.new("Frame")
+main.Size = UDim2.new(0, 220, 0, 150)
+main.Position = UDim2.new(0.5, -110, 0.5, -75)
+main.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
+main.BorderSizePixel = 0
+main.ZIndex = 10
+main.Active = true
+main.Parent = gui
+
+local mainStroke = Instance.new("UIStroke")
+mainStroke.Color = Color3.fromRGB(0, 255, 120)
+mainStroke.Thickness = 1.5
+mainStroke.Parent = main
+
+-- Шапка (за неё таскаем)
+local header = Instance.new("TextButton")
+header.Size = UDim2.new(1, 0, 0, 28)
+header.BackgroundColor3 = Color3.fromRGB(0, 255, 120)
+header.BackgroundTransparency = 0.85
+header.BorderSizePixel = 0
+header.Text = "  PANTSIR // FPS BOOST"
+header.TextColor3 = Color3.fromRGB(0, 255, 120)
+header.TextSize = 12
+header.Font = Enum.Font.GothamBold
+header.TextXAlignment = Enum.TextXAlignment.Left
+header.ZIndex = 11
+header.Parent = main
+
+-- Кнопка свернуть
+local btnMin = Instance.new("TextButton")
+btnMin.Size = UDim2.new(0, 24, 0, 24)
+btnMin.Position = UDim2.new(1, -26, 0, 2)
+btnMin.BackgroundColor3 = Color3.fromRGB(255, 180, 0)
+btnMin.BackgroundTransparency = 0.2
+btnMin.BorderSizePixel = 0
+btnMin.Text = "—"
+btnMin.TextColor3 = Color3.fromRGB(0, 0, 0)
+btnMin.TextSize = 14
+btnMin.Font = Enum.Font.GothamBold
+btnMin.ZIndex = 13
+btnMin.Parent = main
+
+local minStroke = Instance.new("UIStroke")
+minStroke.Color = Color3.fromRGB(255, 180, 0)
+minStroke.Thickness = 1
+minStroke.Parent = btnMin
+
+-- Контент (кнопки + статус)
+local content = Instance.new("Frame")
+content.Size = UDim2.new(1, 0, 1, -28)
+content.Position = UDim2.new(0, 0, 0, 28)
+content.BackgroundTransparency = 1
+content.ZIndex = 11
+content.Parent = main
+
+local btnBoost = Instance.new("TextButton")
+btnBoost.Size = UDim2.new(1, -20, 0, 40)
+btnBoost.Position = UDim2.new(0, 10, 0, 8)
+btnBoost.BackgroundColor3 = Color3.fromRGB(0, 255, 120)
+btnBoost.BackgroundTransparency = 0.99
+btnBoost.BorderSizePixel = 0
+btnBoost.Text = "ОПТИМИЗИРОВАТЬ"
+btnBoost.TextColor3 = Color3.fromRGB(0, 255, 120)
+btnBoost.TextSize = 14
+btnBoost.Font = Enum.Font.GothamBold
+btnBoost.ZIndex = 12
+btnBoost.Parent = content
+
+local btnBoostStroke = Instance.new("UIStroke")
+btnBoostStroke.Color = Color3.fromRGB(0, 255, 120)
+btnBoostStroke.Thickness = 1
+btnBoostStroke.Parent = btnBoost
+
+local btnRestore = Instance.new("TextButton")
+btnRestore.Size = UDim2.new(1, -20, 0, 36)
+btnRestore.Position = UDim2.new(0, 10, 0, 56)
+btnRestore.BackgroundColor3 = Color3.fromRGB(255, 80, 80)
+btnRestore.BackgroundTransparency = 0.99
+btnRestore.BorderSizePixel = 0
+btnRestore.Text = "ВОССТАНОВИТЬ СВЕТ"
+btnRestore.TextColor3 = Color3.fromRGB(255, 80, 80)
+btnRestore.TextSize = 12
+btnRestore.Font = Enum.Font.GothamBold
+btnRestore.ZIndex = 12
+btnRestore.Parent = content
+
+local btnRestoreStroke = Instance.new("UIStroke")
+btnRestoreStroke.Color = Color3.fromRGB(255, 80, 80)
+btnRestoreStroke.Thickness = 1
+btnRestoreStroke.Parent = btnRestore
+
+local status = Instance.new("TextLabel")
+status.Size = UDim2.new(1, -20, 0, 16)
+status.Position = UDim2.new(0, 10, 0, 98)
+status.BackgroundTransparency = 1
+status.Text = "Готов"
+status.TextColor3 = Color3.fromRGB(180, 180, 180)
+status.TextSize = 10
+status.Font = Enum.Font.Gotham
+status.TextXAlignment = Enum.TextXAlignment.Left
+status.ZIndex = 12
+status.Parent = content
+
+-- ================= DRAG (только за шапку, Touch-friendly) =================
+local dragStart, startPos
+
+header.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseButton1 then
+        dragStart = input.Position
+        startPos = main.Position
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                dragStart = nil
+            end
+        end)
+    end
+end)
+
+UIS.InputChanged:Connect(function(input)
+    if dragStart and (input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseMovement) then
+        local delta = input.Position - dragStart
+        main.Position = UDim2.new(
+            startPos.X.Scale, startPos.X.Offset + delta.X,
+            startPos.Y.Scale, startPos.Y.Offset + delta.Y
+        )
+    end
+end)
+
+-- ================= СВОРАЧИВАНИЕ =================
+local minimized = false
+local miniButton
+
+btnMin.MouseButton1Click:Connect(function()
+    if not minimized then
+        -- Свернуть
+        minimized = true
+        main.Visible = false
+        if miniButton then miniButton:Destroy() end
+        miniButton = Instance.new("TextButton")
+        miniButton.Size = UDim2.new(0, 50, 0, 50)
+        miniButton.Position = UDim2.new(0, 10, 0, 60)
+        miniButton.BackgroundColor3 = Color3.fromRGB(0, 255, 120)
+        miniButton.BackgroundTransparency = 0.2
+        miniButton.BorderSizePixel = 0
+        miniButton.Text = "FPS"
+        miniButton.TextColor3 = Color3.fromRGB(0, 0, 0)
+        miniButton.TextSize = 14
+        miniButton.Font = Enum.Font.GothamBold
+        miniButton.ZIndex = 20
+        miniButton.Parent = gui
+        local ms = Instance.new("UIStroke")
+        ms.Color = Color3.fromRGB(0, 255, 120)
+        ms.Thickness = 2
+        ms.Parent = miniButton
+        miniButton.MouseButton1Click:Connect(function()
+            minimized = false
+            main.Visible = true
+            miniButton:Destroy()
+        end)
+    end
+end)
+
+-- ================= ЛОГИКА КНОПОК =================
+btnBoost.MouseButton1Click:Connect(function()
+    status.Text = "Оптимизация..."
+    status.TextColor3 = Color3.fromRGB(0, 255, 120)
+    optimize()
+    status.Text = "Готово. FPS должен подняться."
+end)
+
+btnRestore.MouseButton1Click:Connect(function()
+    pcall(function()
+        Lighting.GlobalShadows = true
+        Lighting.Brightness = 2
+        Lighting.EnvironmentDiffuseScale = 1
+        Lighting.EnvironmentSpecularScale = 1
+        Lighting.OutdoorAmbient = Color3.new(0.5, 0.5, 0.5)
+        Lighting.FogEnd = 100000
+        Lighting.FogStart = 0
+    end)
+    status.Text = "Свет восстановлен (частично)."
+    status.TextColor3 = Color3.fromRGB(255, 80, 80)
+end)
+
+print("[PantsirFPS] Загружено. Тащи за шапку, сворачивай кнопкой «—».")
